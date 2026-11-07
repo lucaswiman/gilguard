@@ -112,6 +112,14 @@ GIL    gilneeder                via gilneeder._speedups  [gilneeder 1.2.0]
 
 Pass module names to check specific ones, `--json` for machine-readable output. Exits 1 if any offender is found, so it works as a CI gate. Modules that fail to import on their own are listed as `ERROR` but don't fail the run, since they couldn't be checked. Add `--strict` to fail on those too. Installing gilguard also puts a `gilguard` command on your path that runs the same scan.
 
+Your project doesn't have to be on a free-threaded build yet. uv can run the scan in a throwaway 3.14t environment with your dependencies in it, leaving your real venv alone:
+
+```bash
+uv run --isolated --python 3.14t --with gilguard python -m gilguard
+```
+
+Swap in `3.15t` or `3.16t` to preview the next release. [Auditing an environment](https://mkennedy.codes/docs/gilguard/user-guide/auditing-an-environment.html#scan-before-you-switch) has the details, including what to do when your project's `requires-python` caps out below that.
+
 The scan is a wide net with one hole: extensions a package loads lazily on first use won't show up in it. Run your test suite with gilguard loaded as a plugin to catch those:
 
 ```bash

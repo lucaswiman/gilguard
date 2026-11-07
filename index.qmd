@@ -82,6 +82,16 @@ Set `GILGUARD_ACTION=warn` and the same report lands as a warning while the prog
 
 :::
 
+## Try it before you switch
+
+Your project doesn't need to be on a free-threaded build yet. uv can stand up a throwaway `3.14t` environment with your dependencies in it and run the scan there:
+
+```bash
+uv run --isolated --python 3.14t --with gilguard python -m gilguard
+```
+
+One command, your real venv untouched, and a list of every dependency that would turn the GIL back on. Swap in `3.15t` or `3.16t` to see how the next release is shaping up.
+
 ## Where to go next
 
 - [Getting started](user-guide/getting-started.qmd) covers installing it and where the import goes.

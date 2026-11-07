@@ -50,6 +50,7 @@ CI: `python -m gilguard --strict` imports every installed package in its own int
 | First pass over an existing app without taking it down | `GILGUARD_ACTION=warn`, alert on `GILGuardWarning` |
 | Same code on standard and free-threaded builds | `GILGUARD_ACTION=off` on the standard-build jobs |
 | List every offender in an environment | `python -m gilguard` (or the `gilguard` command); `--json` for data |
+| Scan a project that isn't on free-threaded Python yet | `uv run --isolated --python 3.14t --with gilguard python -m gilguard` (throwaway 3.14t env with the project's deps) |
 | Catch lazily loaded extensions | `pytest -p gilguard` |
 | Fail CI on packages that couldn't be checked | `python -m gilguard --strict` |
 | Re-check one package after an upgrade | `python -m gilguard somepkg` |

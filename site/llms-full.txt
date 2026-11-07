@@ -265,6 +265,14 @@ uv python install 3.14t
 uv venv -p 3.14t
 ```
 
+Or skip the venv for now. uv can run the scanner in a throwaway free-threaded environment with your project's dependencies in it, even while the project itself is still on 3.12:
+
+```bash
+uv run --isolated --python 3.14t --with gilguard python -m gilguard
+```
+
+[Auditing an environment](auditing-an-environment.qmd#scan-before-you-switch) explains the flags and the one case that needs a different form.
+
 ## Make it the first import
 
 ```python
@@ -604,6 +612,31 @@ python -m gilguard numpy pandas lxml
 ```
 
 That's quicker than a full scan, and it's how you'd re-check one package after an upgrade to see if the fix took.
+
+## Scan before you switch
+
+You don't need a free-threaded venv to run the scan, and your project doesn't need to be on 3.14 yet. uv can stand up a throwaway free-threaded environment with your project's dependencies in it, add gilguard, and run the scanner there, leaving your real venv alone:
+
+```bash
+uv run --isolated --python 3.14t --with gilguard python -m gilguard
+```
+
+`--isolated` gives the command its own temporary environment instead of your project's. `--python 3.14t` picks a free-threaded interpreter, downloading it if you don't have one, and uv syncs your project's dependencies into it as usual. `--with gilguard` adds the scanner on top. It's the quickest answer to "if I moved to 3.14t today, what would turn the GIL back on?", and it works from a project on 3.12 that can't install gilguard at all. Swap in `3.15t` or `3.16t` to see how the next release is shaping up.
+
+::: {.callout-warning}
+## When `requires-python` caps out below the target
+
+If your project declares something like `requires-python = ">=3.11,<3.14"`, uv refuses to run it on 3.14t and says the interpreter is incompatible. Don't reach for `--no-project` to get past that. It also stops uv installing your dependencies, so the scan checks nothing, reports `0 checked`, and exits 0. Export the lockfile and pass it in instead:
+
+```bash
+uv export --no-hashes --no-emit-project -o /tmp/requirements.txt
+uv run --isolated --no-project --python 3.14t --with-requirements /tmp/requirements.txt --with gilguard python -m gilguard
+```
+
+That's also the form for a project that has a `requirements.txt` and no `pyproject.toml`.
+:::
+
+A dependency with no free-threaded wheel and a source build that fails will stop uv before the scan starts. That's a readiness answer of its own, just delivered by uv rather than gilguard.
 
 ## Options
 

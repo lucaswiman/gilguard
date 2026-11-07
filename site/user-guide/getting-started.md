@@ -30,6 +30,14 @@ uv python install 3.14t
 uv venv -p 3.14t
 ```
 
+Or skip the venv for now. uv can run the scanner in a throwaway free-threaded environment with your project's dependencies in it, even while the project itself is still on 3.12:
+
+``` bash
+uv run --isolated --python 3.14t --with gilguard python -m gilguard
+```
+
+[Auditing an environment](auditing-an-environment.md#scan-before-you-switch) explains the flags and the one case that needs a different form.
+
 
 # Make it the first import
 
