@@ -6,6 +6,7 @@ All notable changes to gilguard are documented here. The format follows [Keep a 
 
 ### Fixed
 
+- A GIL flip is reported against the import that caused it. Before, a thread that finished an unrelated import while another thread's extension was turning the GIL on could see the flag already set and raise `GILEnabledError` naming its own module, and since only the first flip is reported, the real culprit imported silently. gilguard now attributes the flip to the thread that got CPython's GIL warning, or, if the warning was filtered or captured, to an extension's `create_module`.
 - `gilguard.install(action='off')` now removes the guard when it is already installed. Before, it only recorded the new action and the hook kept raising, which contradicted the Configuration page.
 
 ### Documentation

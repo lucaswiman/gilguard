@@ -47,6 +47,7 @@ class State:
     def __init__(self, warns):
         GIL[0] = False
         gilguard._reported = False
+        gilguard._flip_thread = None
         # Created at import, before frontrun patched threading; recreate it so the scheduler sees it.
         gilguard._report_lock = threading.Lock()
         self.culprit = Loader(flips_gil=True, warns=warns)

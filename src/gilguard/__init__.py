@@ -396,6 +396,7 @@ _installed = False
 _action = 'raise'
 _reported = False
 _report_lock = threading.Lock()
+_flip_thread: int | None = None  # thread that got CPython's GIL warning
 _state = threading.local()
 _orig_showwarning = warnings.showwarning  # replaced with the live hook when install() runs
 _finder: _GILGuardFinder | None = None
@@ -433,6 +434,18 @@ def _report_from_stack(module: str) -> GILReport:
     return _build_import_report(module, origin, chain)
 
 
+def _flipped_by_this_thread(could_have_flipped: bool) -> bool:
+    """Whether the GIL flip seen after a loader call happened in this thread.
+
+    The flag is process-wide, so another thread's import can flip it while this one is in its
+    loader. CPython emits its warning in the thread that flipped it. Without that warning (a
+    filter or warnings capture swallowed it), fall back to whether this call could have done it.
+    """
+    if _flip_thread is not None:
+        return _flip_thread == threading.get_ident()
+    return could_have_flipped
+
+
 def _wrap(method, get_name_origin):
     def guarded(arg):
         if not _installed or gil_enabled():
@@ -442,13 +455,14 @@ def _wrap(method, get_name_origin):
         stack.append((name, origin))
         try:
             result = method(arg)
-            if gil_enabled():
+            # Only an extension's create_module, which returns the module, flips the GIL.
+            if gil_enabled() and _flipped_by_this_thread(result is not None):
                 _handle(_report_from_stack(name))
             return result
         except GILEnabledError:
             raise
         except BaseException:
-            if gil_enabled():
+            if gil_enabled() and _flipped_by_this_thread(True):
                 _handle(_report_from_stack(name))
             raise
         finally:
@@ -511,8 +525,11 @@ def _showwarning(
 ) -> None:
     # Backstop: CPython emits this warning at the moment it flips the GIL. It catches
     # imports that bypass sys.meta_path (e.g. importlib.util.module_from_spec).
+    global _flip_thread
     text = str(message)
     if _installed and issubclass(category, RuntimeWarning) and text.startswith(_CPYTHON_WARNING):
+        if _flip_thread is None:
+            _flip_thread = threading.get_ident()
         m = _MODULE_IN_WARNING.search(text)
         module = m.group(1) if m else '?'
         stack = _stack()
