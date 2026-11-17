@@ -132,10 +132,10 @@ pytest imports `-p` plugins before it collects `conftest.py` or any test module,
 
 ```bash
 uv venv -p 3.14t
-uv pip install -e . pytest ./tests/fixtures/gilneeder ./tests/fixtures/ftsafe
-python -m pytest
+uv pip install -e . pytest frontrun ./tests/fixtures/gilneeder ./tests/fixtures/ftsafe
+frontrun pytest
 ```
 
-The fixtures are two tiny C extensions: one without `Py_mod_gil` (re-enables the GIL) and one that declares `Py_MOD_GIL_NOT_USED`.
+The fixtures are two tiny C extensions: one without `Py_mod_gil` (re-enables the GIL) and one that declares `Py_MOD_GIL_NOT_USED`. `tests/test_concurrent_imports.py` uses [frontrun](https://github.com/lucaswiman/frontrun) to explore thread interleavings; its `frontrun pytest` wrapper is needed for that test and is otherwise plain `python -m pytest`.
 
 The docs site is built with [Great Docs](https://posit-dev.github.io/great-docs/) (needs [Quarto](https://quarto.org)). The source is `great-docs.yml`, `index.qmd`, and `user_guide/`. Build it with `python scripts/build_docs.py`, which writes the finished site to `site/` and points its images at the hosted copies. Publish the contents of `site/` to `https://mkennedy.codes/docs/gilguard/`. Use `uvx great-docs preview` for a local preview while writing.
